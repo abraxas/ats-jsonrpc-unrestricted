@@ -1,0 +1,86 @@
+# Shared Apache Traffic Server 10.2.0 lab image.
+# Tag: ats-10.2.0-lab:local
+# Pin: tag 10.2.0 commit b1df7334b39a878971c376da849e8da4984918b6
+# Build context is the trafficserver source tree.
+FROM ubuntu:24.04 AS build
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        cmake \
+        g++ \
+        libbrotli-dev \
+        libcap-dev \
+        libfmt-dev \
+        libhwloc-dev \
+        libjemalloc-dev \
+        libluajit-5.1-dev \
+        libmagick++-dev \
+        libpcre2-dev \
+        libpcre3-dev \
+        libssl-dev \
+        libxml2-dev \
+        libzstd-dev \
+        ninja-build \
+        pkg-config \
+        python3 \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /src
+COPY . /src
+
+RUN cmake -S /src -B /build -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/ats \
+        -DBUILD_TESTING=OFF \
+        -DBUILD_REGRESSION_TESTING=OFF \
+        -DENABLE_AUTEST=OFF \
+        -DENABLE_DOCS=OFF \
+        -DENABLE_EXAMPLE=OFF \
+        -DENABLE_CRIPTS=ON \
+        -DBUILD_EXPERIMENTAL_PLUGINS=ON \
+        -DLUAJIT=ON \
+        -DENABLE_LUAJIT=ON \
+        -DENABLE_QUICHE=OFF \
+        -DENABLE_VERIFY_PLUGINS=OFF \
+    && cmake --build /build --parallel \
+    && cmake --install /build \
+    && /opt/ats/bin/traffic_server --version
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PATH="/opt/ats/bin:${PATH}"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        libbrotli1 \
+        libcap2 \
+        libfmt9 \
+        libhwloc15 \
+        libjemalloc2 \
+        libluajit-5.1-2 \
+        libmagick++-6.q16-9t64 \
+        libpcre2-8-0 \
+        libpcre3 \
+        libssl3t64 \
+        libxml2 \
+        libzstd1 \
+        python3 \
+        zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /opt/ats /opt/ats
+
+RUN mkdir -p /opt/ats/var/trafficserver /opt/ats/var/log/trafficserver \
+    && chown -R nobody:nogroup /opt/ats/var
+
+LABEL lab.image="ats-10.2.0-lab:local" \
+      lab.pin="b1df7334b39a878971c376da849e8da4984918b6"
+
+EXPOSE 8080
+CMD ["traffic_server"]
