@@ -13,6 +13,10 @@
   &nbsp;·&nbsp;
   <a href="https://github.com/abraxas/ats-jsonrpc-unrestricted">ats-jsonrpc-unrestricted</a>
 </p>
+<p align="center">
+  Write-up: <a href="https://abraxaslabs.tech/research/ats-jsonrpc-unrestricted"><strong>https://abraxaslabs.tech/research/ats-jsonrpc-unrestricted</strong></a>
+</p>
+
 
 # ats-jsonrpc-unrestricted
 
